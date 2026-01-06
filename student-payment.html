@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Payment Form – CRUD</title>
+<style>
+  body{
+    font-family: Arial, Helvetica, sans-serif;
+    background: linear-gradient(#f3dbff,#bcd8ff);
+    padding: 30px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .card{
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 25px;
+    width: 480px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+  }
+
+  h2{ text-align: center; margin-top:0; color: #3a3a7a; }
+
+  label{ display: block; margin-top: 12px; font-weight: 600; }
+
+  input, select{
+    width: 100%;
+    padding: 10px;
+    margin-top: 6px;
+    border-radius: 10px;
+    border: 1px solid #c9c9c9;
+    background: #fafaff;
+    box-sizing: border-box;
+  }
+/* Gender box horizontal with proper alignment */
+.gender-box {
+  display: flex;           
+  gap: 20px;              
+  margin-top: 6px;
+  padding: 10px;
+  border: 1px solid #c9c9c9;;
+  border-radius: 10px;
+  background: #fafaff;
+}
+.gender-box input[type="radio"] {
+  width: 18px;         
+  height: 18px;
+  accent-color: #cb8fb6;  
+  cursor: pointer;
+}
+
+.gender-box label {
+  display: flex;
+  align-items: center;    
+  gap: 6px;                
+  font-weight: normal;
+  cursor: pointer;
+}
+
+
+  .btns{
+    margin-top: 18px; display: flex; gap: 10px;
+  }
+  .btns button{
+    flex: 1; padding: 10px; border:0; border-radius: 10px;
+    font-weight: 600; cursor: pointer;
+  }
+
+  .save{ background: #4caf50; color:#fff; }
+  .update{ background: #ff9800; color:#fff; }
+  .reset{ background: #607d8b; color:#fff; }
+  .delete{ background: #e53935; color:#fff; }
+
+  .table-card{ min-width: 650px; }
+  table{ width: 100%; border-collapse: collapse; margin-top: 10px; }
+  th, td{ border: 1px solid #ddd; padding: 10px; text-align: center; }
+  th{ background: #eef1ff; }
+  tr.selected{ background: #d7f0ff; }
+
+  .action-btn{
+    padding: 6px 12px; border-radius: 8px;
+    border:0; cursor:pointer; background:#3f51b5; color:#fff;
+  }
+
+  /* POPUP & TOAST */
+  .overlay{
+    position: fixed; inset:0;
+    background: rgba(0,0,0,0.45);
+    display: none; 
+    align-items: center; justify-content: center;
+    z-index: 100;
+  }
+
+  .popup{
+    background: #fff;
+    padding: 22px 25px;
+    border-radius: 14px;
+    width: 340px;
+    text-align: center;
+    box-shadow: 0 10px 26px rgba(0,0,0,0.25);
+  }
+
+  .popup h3{ margin:0 0 10px; color:#333; font-size:18px; }
+  .popup p{ margin:0 0 18px; font-size:15px; }
+
+  .popup-btns{
+    display:flex; gap:10px; justify-content:center;
+  }
+  .popup-btns button{
+    padding:8px 14px;
+    border-radius:10px; border:0; cursor:pointer; font-weight:600;
+  }
+  .yes{background:#e53935;color:#fff;}
+  .no{background:#607d8b;color:#fff;}
+
+  .toast{
+    position:fixed; top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    background:#4caf50;
+    color:#fff;
+    padding:14px 20px;
+    border-radius:12px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.25);
+    display:none;
+    font-weight:600;
+    text-align:center;
+    z-index:101;
+  }
+</style>
+</head>
+<body>
+
+<div style="display:flex; gap:30px; flex-wrap:wrap; justify-content:center;">
+
+  // FORM CARD 
+  <div class="card">
+    <h2>Payment Form</h2>
+    <form id="payForm" onsubmit="return false;">
+      <label>Register Number</label>
+      <input type="text" id="regno" placeholder="Enter Register Number" required>
+
+      <label>Student Name</label>
+      <input type="text" id="stdName" placeholder="Enter Student Name" required>
+
+      <label>Gender</label>
+      <div class="gender-box">
+        <label><input type="radio" name="gender" value="Male"> Male</label>
+        <label><input type="radio" name="gender" value="Female"> Female</label>
+      </div>
+
+      <label>Payment Date</label>
+      <input type="date" id="payDate" required>
+
+      <label>Payment Mode</label>
+      <select id="mode">
+        <option>Cash</option>
+        <option>UPI</option>
+        <option>Card</option>
+      </select>
+
+      <label>Amount</label>
+      <input type="number" id="amount" placeholder="Enter Amount" required>
+
+      <div class="btns">
+        <button type="button" class="save" onclick="saveData()">Save</button>
+        <button type="button" class="update" onclick="updateData()">Update</button>
+        <button type="reset" class="reset" onclick="clearForm()">Reset</button>
+        <button type="button" class="delete" onclick="deleteSelected()">Delete</button>
+      </div>
+    </form>
+  </div>
+
+  // TABLE CARD 
+  <div class="card table-card">
+    <h2>Payment Records</h2>
+    <table id="tbl">
+      <thead>
+        <tr>
+          <th>Reg No</th>
+          <th>Name</th>
+          <th>Gender</th>
+          <th>Date</th>
+          <th>Mode</th>
+          <th>Amount</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+</div>
+
+// DELETE CONFIRMATION POPUP 
+<div class="overlay" id="confirmBox">
+  <div class="popup">
+    <h3>Delete Record?</h3>
+    <p>Are you sure you want to delete this record?</p>
+    <div class="popup-btns">
+      <button class="yes" onclick="confirmDelete()">Yes, Delete</button>
+      <button class="no" onclick="closeConfirm()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+//TOAST MESSAGE 
+<div class="toast" id="toastBox"></div>
+
+<script>
+let selectedRow = null;
+let rowToDelete = null;
+
+function getGender(){
+  const g = document.querySelector('input[name="gender"]:checked');
+  return g ? g.value : "";
+}
+
+function clearForm(){
+  document.getElementById("payForm").reset();
+  selectedRow = null;
+  document.querySelectorAll("#tbl tbody tr").forEach(r=>r.classList.remove("selected"));
+}
+
+function showToast(msg,bg="#4caf50"){
+  const t = document.getElementById("toastBox");
+  t.innerText = msg;
+  t.style.background = bg;
+  t.style.display = "block";
+  setTimeout(()=> t.style.display="none",1800);
+}
+
+function validateForm(){
+  if(!regno.value.trim()){ showToast("Register Number is required","#e53935"); return false; }
+  if(!stdName.value.trim()){ showToast("Student Name is required","#e53935"); return false; }
+  if(!getGender()){ showToast("Please select Gender","#e53935"); return false; }
+  if(!payDate.value){ showToast("Please select Payment Date","#e53935"); return false; }
+  if(!amount.value || Number(amount.value)<=0){ showToast("Please enter valid Amount","#e53935"); return false; }
+  return true;
+}
+
+function saveData(){
+  if(!validateForm()) return;
+  const row = document.querySelector("#tbl tbody").insertRow();
+  row.innerHTML=`
+    <td>${regno.value.trim()}</td>
+    <td>${stdName.value.trim()}</td>
+    <td>${getGender()}</td>
+    <td>${payDate.value}</td>
+    <td>${mode.value}</td>
+    <td>${amount.value}</td>
+    <td><button class="action-btn" onclick="selectRow(this)">Select</button></td>`;
+  showToast("Record Saved Successfully");
+  clearForm();
+}
+
+function selectRow(btn){
+  document.querySelectorAll("#tbl tbody tr").forEach(r=>r.classList.remove("selected"));
+  selectedRow = btn.parentElement.parentElement;
+  selectedRow.classList.add("selected");
+
+  regno.value = selectedRow.cells[0].innerText;
+  stdName.value = selectedRow.cells[1].innerText;
+  document.querySelector(`input[value="${selectedRow.cells[2].innerText}"]`).checked=true;
+  payDate.value = selectedRow.cells[3].innerText;
+  mode.value = selectedRow.cells[4].innerText;
+  amount.value = selectedRow.cells[5].innerText;
+}
+
+function updateData(){
+  if(!selectedRow){ showToast("Select a record to update","#e53935"); return; }
+  if(!validateForm()) return;
+  selectedRow.cells[0].innerText = regno.value.trim();
+  selectedRow.cells[1].innerText = stdName.value.trim();
+  selectedRow.cells[2].innerText = getGender();
+  selectedRow.cells[3].innerText = payDate.value;
+  selectedRow.cells[4].innerText = mode.value;
+  selectedRow.cells[5].innerText = amount.value;
+  showToast("Record Updated Successfully");
+  clearForm();
+}
+
+function deleteSelected(){
+  if(!selectedRow){ showToast("Select a record to delete","#e53935"); return; }
+  rowToDelete = selectedRow;
+  document.getElementById("confirmBox").style.display = "flex";
+}
+
+function closeConfirm(){
+  document.getElementById("confirmBox").style.display = "none";
+  rowToDelete = null;
+}
+
+function confirmDelete(){
+  if(rowToDelete){
+    rowToDelete.remove();
+    showToast("Record Deleted Successfully");
+    clearForm();
+  }
+  closeConfirm();
+}
+</script>
+</body>
+</html>
